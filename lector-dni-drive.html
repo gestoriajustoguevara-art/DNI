@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lector DNI/NIE — Gestoría Justo Guevara</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Nunito:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#eef1f8;--surface:#fff;--surface2:#f4f6fb;--border:#dde4f2;--border2:#b8c8e8;
+  --text:#18243a;--text2:#5a6880;--text3:#98a8c0;
+  --blue:#1a4fff;--blue2:#eaf0ff;--blue3:#c0d0ff;
+  --green:#0fa870;--green2:#e8f8f2;
+  --amber:#c07800;--amber2:#fff8e0;
+  --red:#d02020;--red2:#fff0f0;
+  --navy:#0d1b3e;
+  --r:14px;--sh:0 2px 16px rgba(20,50,120,.08);--sh2:0 6px 32px rgba(20,50,120,.13);
+  --font:'Nunito',sans-serif;--head:'Syne',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.app{max-width:1400px;margin:0 auto;padding:20px 16px 60px}
+
+/* HEADER */
+.hdr{background:var(--navy);border-radius:14px;padding:14px 20px;margin-bottom:14px;display:flex;align-items:center;gap:14px;box-shadow:var(--sh2)}
+.hdr-ic{background:var(--blue);width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+.hdr-tit{font-family:var(--head);font-size:1.2rem;font-weight:800;color:#fff}
+.hdr-sub{font-size:.72rem;color:rgba(255,255,255,.45);margin-top:2px}
+.hdr-badge{margin-left:auto;background:rgba(45,212,160,.15);border:1px solid rgba(45,212,160,.3);padding:5px 14px;border-radius:20px;font-size:.7rem;font-weight:700;color:#2dd4a0;flex-shrink:0}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px;margin-bottom:16px;box-shadow:var(--sh)}
+.sec-lbl{font-family:var(--head);font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* CONFIG */
+.config-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.config-field{flex:1;min-width:200px}
+.config-field label{display:block;font-size:.72rem;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.config-field input{width:100%;padding:10px 13px;border-radius:9px;border:1.5px solid var(--border2);background:var(--surface2);font-family:var(--mono);font-size:.8rem;color:var(--text);outline:none;transition:border-color .15s}
+.config-field input:focus{border-color:var(--blue)}
+.save-config-btn{padding:10px 18px;border-radius:9px;border:none;background:var(--navy);color:#fff;font-family:var(--font);font-size:.82rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.save-config-btn:hover{background:#1a3070}
+.config-status{font-size:.75rem;margin-top:8px;padding:8px 12px;border-radius:8px;display:none}
+.config-status.ok{background:var(--green2);color:var(--green)}
+.config-status.err{background:var(--red2);color:var(--red)}
+
+/* INFO CARPETA */
+.info-box{background:var(--blue2);border:1px solid var(--blue3);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:.83rem;line-height:1.6;color:var(--text2)}
+.info-box strong{color:var(--blue);font-weight:700}
+.info-box code{font-family:var(--mono);background:var(--blue3);padding:1px 6px;border-radius:4px;font-size:.78rem;color:var(--navy)}
+
+/* BOTONES ACCIÓN */
+.action-row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{padding:12px 20px;border-radius:10px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text2);font-family:var(--font);font-size:.86rem;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:8px}
+.btn:hover:not(:disabled){border-color:var(--blue);color:var(--blue);background:var(--blue2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 3px 14px rgba(26,79,255,.28)}
+.btn.primary:hover:not(:disabled){background:#1040ee}
+.btn.green{background:var(--green);color:#fff;border-color:var(--green);box-shadow:0 3px 14px rgba(15,168,112,.25)}
+.btn.green:hover:not(:disabled){background:#0d9060}
+
+/* LOADING */
+.loading{display:none;text-align:center;padding:36px;color:var(--text2)}
+.spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:.88rem;font-weight:600}
+
+/* RESULTADOS */
+.results-wrap{display:none}
+.results-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.results-count{font-family:var(--head);font-size:1rem;font-weight:800}
+.sheet-link{font-size:.8rem;color:var(--blue);text-decoration:none;padding:5px 12px;border-radius:20px;border:1px solid var(--blue3);background:var(--blue2)}
+.sheet-link:hover{background:var(--blue3)}
+
+/* DOCUMENTO CARD */
+.doc-card{background:var(--surface);border:2px solid var(--border);border-radius:14px;margin-bottom:14px;overflow:hidden;transition:border-color .2s}
+.doc-card.guardado{border-color:var(--green);opacity:.7}
+.doc-card-hdr{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border);cursor:pointer}
+.doc-type-pill{font-size:.68rem;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.04em;flex-shrink:0}
+.doc-type-pill.DNI{background:var(--blue);color:#fff}
+.doc-type-pill.NIE,.doc-type-pill.TIE{background:#d06000;color:#fff}
+.doc-type-pill.unknown{background:var(--text3);color:#fff}
+.doc-filename{font-size:.82rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.doc-num{font-family:var(--mono);font-size:.82rem;font-weight:600;color:var(--text)}
+.doc-collapse-arrow{color:var(--text3);font-size:.8rem;transition:transform .2s;flex-shrink:0}
+.doc-collapse-arrow.open{transform:rotate(90deg)}
+.doc-body{display:none;padding:16px 18px}
+
+/* FIELDS */
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:500px){.fields{grid-template-columns:1fr}}
+.field{background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;padding:10px 13px}
+.field.full{grid-column:1/-1}
+.field-lbl{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:4px}
+.field-inp{width:100%;background:none;border:none;color:var(--text);font-family:var(--font);font-size:.9rem;font-weight:700;outline:none;padding:0}
+.field-inp::placeholder{font-weight:400;color:var(--text3)}
+.field:focus-within{border-color:var(--blue)}
+
+/* RAW TEXT */
+.raw-toggle{font-size:.7rem;color:var(--text3);cursor:pointer;margin-top:10px;display:inline-block}
+.raw-box{background:#111827;color:#7ecc9a;font-family:var(--mono);font-size:.68rem;line-height:1.6;padding:12px;border-radius:8px;max-height:140px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;margin-top:6px;display:none}
+
+/* DOC LAYOUT CON IMAGEN */
+.doc-layout{display:grid;grid-template-columns:55% 1fr;gap:20px;align-items:start}
+@media(max-width:900px){.doc-layout{grid-template-columns:1fr}}
+.doc-img-wrap{position:sticky;top:10px}
+.doc-img-frame{border-radius:10px;overflow:hidden;border:1.5px solid var(--border2);background:#111;min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.doc-img-frame img{width:100%;display:block;border-radius:8px}
+.doc-img-frame iframe{width:100%;height:700px;border:none;border-radius:8px}
+.doc-img-lbl{font-size:.7rem;color:var(--text3);text-align:center;padding:6px;font-weight:600}
+
+/* DOC ACTIONS */
+.doc-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.doc-btn{padding:8px 16px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface);font-family:var(--font);font-size:.8rem;font-weight:700;cursor:pointer;transition:all .15s;color:var(--text2)}
+.doc-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue2)}
+.doc-btn.save{background:var(--green);color:#fff;border-color:var(--green)}
+.doc-btn.save:hover{background:#0d9060}
+.doc-btn.excel{border-color:var(--green);color:var(--green);background:var(--green2)}
+.guardado-badge{font-size:.75rem;color:var(--green);font-weight:700;display:none;align-items:center;gap:5px}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text2)}
+.empty-icon{font-size:3rem;margin-bottom:12px}
+.empty-title{font-family:var(--head);font-size:1rem;font-weight:700;margin-bottom:6px;color:var(--text)}
+.empty-sub{font-size:.82rem}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--navy);color:#fff;padding:10px 22px;border-radius:30px;font-size:.82rem;font-weight:700;opacity:0;transition:all .22s;z-index:999;pointer-events:none;white-space:nowrap;box-shadow:var(--sh2)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--green)}.toast.err{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hdr">
+    <div class="hdr-ic">🪪</div>
+    <div>
+      <div class="hdr-tit">Lector DNI / NIE</div>
+      <div class="hdr-sub">Gestoría Justo Guevara · Colegiado nº 493 · OCR Google Drive</div>
+    </div>
+    <div class="hdr-badge">✓ 100% Gratis</div>
+  </div>
+
+  <!-- CONFIGURACIÓN -->
+  <div class="card" id="configCard">
+    <div class="sec-lbl">⚙️ Configuración</div>
+    <div class="config-row">
+      <div class="config-field">
+        <label>URL del Apps Script</label>
+        <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/…/exec">
+      </div>
+      <button class="save-config-btn" onclick="guardarConfig()">💾 Guardar</button>
+    </div>
+    <div class="config-status" id="configStatus"></div>
+  </div>
+
+  <!-- INSTRUCCIONES -->
+  <div class="info-box">
+    📂 <strong>Cómo usar:</strong> Deja los escaneos de DNI/NIE en tu carpeta de Drive llamada
+    <code>DNIs pendientes</code> · Pulsa <strong>Previsualizar</strong> para ver los datos antes de guardar,
+    o <strong>Procesar todo</strong> para guardar directamente en Sheets y mover los archivos a
+    <code>DNIs procesados</code>
+  </div>
+
+  <!-- BOTONES PRINCIPALES -->
+  <div class="action-row" style="margin-bottom:16px">
+    <button class="btn primary" id="btnPreview" onclick="previsualizar()" disabled>
+      👁️ Previsualizar
+    </button>
+    <button class="btn green" id="btnProcesar" onclick="procesarTodo()" disabled>
+      ✅ Procesar todo y guardar en Sheets
+    </button>
+    <button class="btn" id="btnSheet" onclick="abrirSheet()" disabled>
+      📊 Abrir Google Sheets
+    </button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-txt" id="loadingTxt">Leyendo documentos con OCR de Google…</div>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div class="results-wrap" id="resultsWrap">
+    <div class="results-header">
+      <div class="results-count" id="resultsCount"></div>
+      <a class="sheet-link" id="sheetLink" href="#" target="_blank" style="display:none">📊 Ver en Sheets →</a>
+      <button class="btn" onclick="previsualizar()" style="margin-left:auto;font-size:.78rem;padding:7px 14px">🔄 Actualizar</button>
+    </div>
+    <div id="docsList"></div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══ CONFIG ═══════════════════════════════════════════════
+const SCRIPT_URL_FIJA = 'https://script.google.com/macros/s/AKfycbxe0xdskhFR_Yqbp-__XS_NVVL5zlhMTH0HvJVFbxyRDfVRqGaKK2M7waXR8fX-_Dpk9w/exec';
+let scriptUrl = SCRIPT_URL_FIJA;
+let sheetUrl  = '';
+
+window.onload = () => {
+  document.getElementById('configCard').style.display = 'none';
+  habilitarBotones(true);
+};
+
+function guardarConfig() {
+  const url = document.getElementById('scriptUrl').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    mostrarConfigErr('La URL debe empezar por https://script.google.com');
+    return;
+  }
+  scriptUrl = url;
+  localStorage.setItem('dni_script_url', url);
+  habilitarBotones(true);
+  mostrarConfigOk();
+  toast('Configuración guardada ✓', 'ok');
+}
+
+function habilitarBotones(on) {
+  ['btnPreview','btnProcesar','btnSheet'].forEach(id => {
+    document.getElementById(id).disabled = !on;
+  });
+}
+
+function mostrarConfigOk() {
+  const el = document.getElementById('configStatus');
+  el.textContent = '✓ Script configurado correctamente';
+  el.className = 'config-status ok';
+  el.style.display = 'block';
+}
+function mostrarConfigErr(msg) {
+  const el = document.getElementById('configStatus');
+  el.textContent = '✕ ' + msg;
+  el.className = 'config-status err';
+  el.style.display = 'block';
+}
+
+// ═══ LLAMADAS AL SCRIPT ═══════════════════════════════════
+async function llamar(accion) {
+  const url = scriptUrl + '?accion=' + accion + '&t=' + Date.now();
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error('Error HTTP ' + resp.status);
+  return await resp.json();
+}
+
+async function llamarPost(datos) {
+  const resp = await fetch(scriptUrl, {
+    method: 'POST',
+    body: JSON.stringify(datos)
+  });
+  if (!resp.ok) throw new Error('Error HTTP ' + resp.status);
+  return await resp.json();
+}
+
+// ═══ PREVISUALIZAR ════════════════════════════════════════
+async function previsualizar() {
+  if (!scriptUrl) { toast('Configura la URL del script primero', 'err'); return; }
+  mostrarLoading('Leyendo DNIs de la carpeta con OCR de Google…');
+  try {
+    const data = await llamar('previsualizar');
+    ocultarLoading();
+    renderResultados(data.resultados, false);
+    cargarUrlSheet();
+  } catch(e) {
+    ocultarLoading();
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+// ═══ PROCESAR TODO ════════════════════════════════════════
+async function procesarTodo() {
+  if (!scriptUrl) { toast('Configura la URL del script primero', 'err'); return; }
+  if (!confirm('¿Procesar todos los documentos de la carpeta "DNIs pendientes"?\nSe guardarán en Sheets y se moverán a "DNIs procesados".')) return;
+  mostrarLoading('Procesando y guardando en Google Sheets…');
+  try {
+    const data = await llamar('procesar');
+    ocultarLoading();
+    renderResultados(data.resultados, true);
+    cargarUrlSheet();
+    toast(`✓ ${data.total} documento(s) procesado(s)`, 'ok');
+  } catch(e) {
+    ocultarLoading();
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+// ═══ GUARDAR UNO ══════════════════════════════════════════
+async function guardarUno(idx, forzar=false) {
+  const datos = window._resultados[idx].datos;
+  const campos = ['numero','apellido1','apellido2','nombre','fnac','sexo','nat','femision','fcad','lugarnac','domicilio','padre','madre','nsoporte','can'];
+  campos.forEach(c => {
+    const el = document.getElementById(`f_${idx}_${c}`);
+    if (el) datos[c] = el.value;
+  });
+  datos.ap1 = datos.apellido1; datos.ap2 = datos.apellido2;
+  if (forzar) datos._forzar = true;
+
+  try {
+    await llamarPost({ accion: 'guardar', datos });
+    const card = document.getElementById('card_' + idx);
+    card.classList.add('guardado');
+    document.getElementById('badge_' + idx).style.display = 'flex';
+    const btn = document.getElementById('savebtn_' + idx);
+    if (btn) { btn.disabled = true; btn.textContent = '✓ Guardado'; }
+    const btnF = document.getElementById('forcebtn_' + idx);
+    if (btnF) btnF.remove();
+    toast('Guardado en Sheets ✓', 'ok');
+  } catch(e) {
+    if (e.message && e.message.includes('DUPLICADO:')) {
+      let info = {};
+      try { info = JSON.parse(e.message.replace('DUPLICADO:','')); } catch(_) {}
+      const btn = document.getElementById('savebtn_' + idx);
+      if (btn) { btn.textContent = '⚠ Ya existe (fila '+(info.fila||'?')+')'; btn.style.cssText='background:var(--amber);color:#fff'; btn.disabled=true; }
+      const actions = document.getElementById('docactions_' + idx);
+      if (actions && !document.getElementById('forcebtn_' + idx)) {
+        const btnF = document.createElement('button');
+        btnF.id = 'forcebtn_' + idx;
+        btnF.className = 'doc-btn';
+        btnF.style.cssText = 'border-color:var(--amber);color:var(--amber);background:var(--amber2)';
+        btnF.innerHTML = '🔄 Guardar igualmente (es una renovación)';
+        btnF.onclick = () => guardarUno(idx, true);
+        actions.appendChild(btnF);
+      }
+      toast('⚠ Este DNI/NIE ya está en Sheets — ¿renovación?', '');
+    } else {
+      toast('Error al guardar: ' + e.message, 'err');
+    }
+  }
+}
+
+// ═══ COPIAR EXCEL ══════════════════════════════════════════
+function copiarExcel(idx) {
+  const campos = ['numero','apellido1','apellido2','nombre','fnac','sexo','nat','femision','fcad','lugarnac','domicilio','padre','madre','nsoporte'];
+  const vals = campos.map(c => {
+    const el = document.getElementById(`f_${idx}_${c}`);
+    return el ? el.value : '';
+  });
+  const txt = vals.join('\t');
+  navigator.clipboard.writeText(txt).then(() => toast('Copiado · pega con Ctrl+V en Excel', 'ok')).catch(() => {
+    const ta = document.createElement('textarea'); ta.value = txt;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    toast('Copiado ✓', 'ok');
+  });
+}
+
+// ═══ RENDER ═══════════════════════════════════════════════
+function renderResultados(resultados, yaGuardados) {
+  window._resultados = resultados;
+  const wrap = document.getElementById('resultsWrap');
+  const list = document.getElementById('docsList');
+  const count = document.getElementById('resultsCount');
+  wrap.style.display = 'block';
+
+  const ok = resultados.filter(r => r.ok);
+  const err = resultados.filter(r => !r.ok);
+  count.textContent = ok.length + ' documento(s) encontrado(s)' + (err.length ? ` · ${err.length} con error` : '');
+
+  if (!resultados.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📂</div>
+        <div class="empty-title">Carpeta vacía</div>
+        <div class="empty-sub">No hay archivos en <strong>"DNIs pendientes"</strong> de tu Drive</div>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = resultados.map((r, i) => {
+    if (!r.ok) return `
+      <div class="doc-card">
+        <div class="doc-card-hdr" style="background:var(--red2)">
+          <span style="color:var(--red);font-weight:700">⚠ Error</span>
+          <span class="doc-filename">${r.archivo || '—'}</span>
+          <span style="font-size:.75rem;color:var(--red)">${r.error || ''}</span>
+        </div>
+      </div>`;
+
+    const d = r.datos;
+    const tipo = (d.tipo || 'unknown').toUpperCase();
+    const nombreCompleto = [d.apellido1, d.apellido2, d.nombre].filter(Boolean).join(' ');
+    const guardadoBadge = yaGuardados ? 'flex' : 'none';
+    const cardClass = yaGuardados ? 'doc-card guardado' : 'doc-card';
+
+    return `
+    <div class="${cardClass}" id="card_${i}">
+      <div class="doc-card-hdr" onclick="toggleCard(${i})">
+        <span class="doc-type-pill ${tipo}">${tipo}</span>
+        <span class="doc-filename">${d.archivo || '—'}</span>
+        <span class="doc-num">${d.numero || '—'}</span>
+        <div class="guardado-badge" id="badge_${i}" style="display:${guardadoBadge}">✓ Guardado</div>
+        <span class="doc-collapse-arrow open" id="arrow_${i}">▶</span>
+      </div>
+      <div class="doc-body" id="body_${i}" style="display:block">
+        <div class="doc-layout">
+          <!-- IMAGEN DEL DOCUMENTO -->
+          <div class="doc-img-wrap">
+            <div class="doc-img-frame" id="imgframe_${i}">
+              <div class="doc-img-lbl">⏳ Cargando imagen…</div>
+            </div>
+            <div class="doc-img-lbl">${d.archivo || ''}</div>
+          </div>
+          <!-- CAMPOS -->
+          <div>
+            <div class="fields">
+              ${campo(i,'numero','DNI / NIE',d.numero,'full')}
+              ${campo(i,'apellido1','Primer apellido',d.apellido1)}
+              ${campo(i,'apellido2','Segundo apellido',d.apellido2)}
+              ${campo(i,'nombre','Nombre',d.nombre,'full')}
+              ${campo(i,'fnac','F. Nacimiento',d.fnac)}
+              ${campo(i,'sexo','Sexo',d.sexo)}
+              ${campo(i,'nat','Nacionalidad',d.nat)}
+              ${campo(i,'femision','F. Emisión',d.femision)}
+              ${campo(i,'fcad','F. Caducidad',d.fcad)}
+              ${campo(i,'lugarnac','Lugar nacimiento',d.lugarnac,'full')}
+              ${campo(i,'domicilio','Domicilio',d.domicilio,'full')}
+              ${campo(i,'padre','Padre',d.padre)}
+              ${campo(i,'madre','Madre',d.madre)}
+              ${campo(i,'nsoporte','Nº Soporte',d.nsoporte,'full')}
+              ${d.can ? campo(i,'can','CAN',d.can) : ''}
+            </div>
+            <div style="margin-top:10px">
+              <span class="raw-toggle" onclick="toggleRaw(${i})">📝 Ver texto OCR completo</span>
+              <div class="raw-box" id="raw_${i}">${(d.texto_crudo||'').replace(/</g,'&lt;')}</div>
+            </div>
+            <div class="doc-actions" id="docactions_${i}">
+              ${!yaGuardados ? `<button class="doc-btn save" id="savebtn_${i}" onclick="guardarUno(${i})">💾 Guardar en Sheets</button>` : ''}
+              <button class="doc-btn excel" onclick="copiarExcel(${i})">📋 Copiar para Excel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Cargar imágenes después del render
+  resultados.forEach((r, i) => {
+    if (r.ok && r.datos.fileId) cargarImagen(i, r.datos.fileId, r.datos.mimeType);
+  });
+}
+
+function cargarImagen(idx, fileId, mime) {
+  const frame = document.getElementById('imgframe_' + idx);
+  if (!frame) return;
+  // Usar la URL de thumbnail de Drive (no requiere auth adicional si el archivo es del usuario)
+  // Intentamos primero con la URL de previsualización de Drive
+  const urlDrive = `https://drive.google.com/file/d/${fileId}/preview`;
+  if (mime === 'application/pdf') {
+    frame.innerHTML = `<iframe src="${urlDrive}" style="width:100%;height:700px;border:none;border-radius:8px"></iframe>`;
+  } else {
+    // Para imágenes usamos la URL de thumbnail grande
+    const urlThumb = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+    const img = document.createElement('img');
+    img.style.cssText = 'width:100%;display:block;border-radius:8px';
+    img.src = urlThumb;
+    img.onerror = () => {
+      // Si falla thumbnail, intentar con preview
+      frame.innerHTML = `<iframe src="${urlDrive}" style="width:100%;height:700px;border:none;border-radius:8px"></iframe>`;
+    };
+    frame.innerHTML = '';
+    frame.appendChild(img);
+  }
+}
+
+function campo(idx, key, label, valor, extra='') {
+  return `<div class="field ${extra}">
+    <div class="field-lbl">${label}</div>
+    <input class="field-inp" id="f_${idx}_${key}" value="${(valor||'').replace(/"/g,'&quot;')}" placeholder="—">
+  </div>`;
+}
+
+function toggleCard(i) {
+  const body = document.getElementById('body_' + i);
+  const arrow = document.getElementById('arrow_' + i);
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  arrow.classList.toggle('open', !open);
+}
+
+function toggleRaw(i) {
+  const box = document.getElementById('raw_' + i);
+  box.style.display = box.style.display === 'block' ? 'none' : 'block';
+}
+
+async function abrirSheet() {
+  if (sheetUrl) { window.open(sheetUrl, '_blank'); return; }
+  try {
+    const data = await llamar('sheetUrl');
+    if (data.url) { sheetUrl = data.url; window.open(sheetUrl, '_blank'); }
+  } catch(e) { toast('No se pudo obtener la URL del Sheets', 'err'); }
+}
+
+async function cargarUrlSheet() {
+  try {
+    const data = await llamar('sheetUrl');
+    if (data.url) {
+      sheetUrl = data.url;
+      const link = document.getElementById('sheetLink');
+      link.href = sheetUrl;
+      link.style.display = 'inline-block';
+    }
+  } catch(e) {}
+}
+
+function mostrarLoading(txt) {
+  document.getElementById('loadingTxt').textContent = txt;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('resultsWrap').style.display = 'none';
+}
+function ocultarLoading() {
+  document.getElementById('loading').style.display = 'none';
+}
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + (type||'');
+  t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
