@@ -309,6 +309,17 @@ async function guardarUno(idx, forzar=false) {
     const btnF = document.getElementById('forcebtn_' + idx);
     if (btnF) btnF.remove();
     toast('Guardado en Sheets ✓', 'ok');
+    // ── Guardar también en ClientesMAESTRO ──────────────────
+    guardarEnMaestro({
+      DNI_NIE:   (datos.numero  || '').toUpperCase().replace(/-/g,''),
+      Nombre:    datos.nombre   || '',
+      Apellido1: datos.apellido1|| '',
+      Apellido2: datos.apellido2|| '',
+      Fecha_Nacimiento:       datos.fnac    || '',
+      Fecha_Vencimiento_DNI:  datos.fcad    || '',
+      Nacionalidad:           datos.nat     || '',
+      Tipo: 'fisica'
+    });
   } catch(e) {
     if (e.message && e.message.includes('DUPLICADO:')) {
       let info = {};
@@ -518,6 +529,16 @@ function toast(msg, type) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast ' + (type||'');
   t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2800);
+}
+// ═══ CLIENTESMAESTRO ══════════════════════════════════════
+const URL_MAESTRO = 'https://script.google.com/macros/s/AKfycbyVXypuTXm5tRvbP-xJu06q7ZsJ2qve790lCyvBLJpr6jTckZhc6wZ4kX5XPhVOWCVrww/exec';
+
+function guardarEnMaestro(datos) {
+  if (!datos.DNI_NIE || !datos.Nombre) return; // mínimo obligatorio
+  fetch(URL_MAESTRO, {
+    method: 'POST', mode: 'no-cors',
+    body: JSON.stringify({ action: 'upsert', datos })
+  });
 }
 </script>
 </body>
